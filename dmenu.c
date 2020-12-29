@@ -15,6 +15,7 @@
 #include <X11/extensions/Xinerama.h>
 #endif
 #include <X11/Xft/Xft.h>
+#include <X11/Xresource.h>
 
 #include "drw.h"
 #include "util.h"
@@ -28,12 +29,27 @@
 /* enums */
 enum { SchemeNorm, SchemeSel, SchemeOut, SchemeLast }; /* color schemes */
 
+/* Xresources preferences */
+enum resource_type {
+	STRING = 0,
+	INTEGER = 1,
+	FLOAT = 2
+};
+
+typedef struct {
+	char *name;
+	enum resource_type type;
+	void *dst;
+} ResourcePref;
+
 struct item {
 	char *text;
 	struct item *left, *right;
 	int out;
 };
 
+static char xprop_name[] = "dmenu";
+static char xprop_class[] = "dmenu";
 static char text[BUFSIZ] = "";
 static char *embed;
 static int bh, mw, mh;
@@ -614,6 +630,54 @@ run(void)
 	}
 }
 
+void
+resource_load(XrmDatabase db, char *name, enum resource_type rtype, void *dst)
+{
+	char *sdst = dst;
+	int *idst = dst;
+	float *fdst = dst;
+
+	char fullname[256];
+	char *type;
+	XrmValue ret;
+
+	snprintf(fullname, sizeof(fullname), "%s.%s", xprop_name, name);
+	fullname[sizeof(fullname) - 1] = '\0';
+
+	XrmGetResource(db, fullname, "*", &type, &ret);
+	if (!(ret.addr == NULL || strncmp("String", type, 64)))
+	{
+		switch (rtype) {
+		case STRING:
+			strcpy(sdst, ret.addr);
+			break;
+		case INTEGER:
+			*idst = strtoul(ret.addr, NULL, 10);
+			break;
+		case FLOAT:
+			*fdst = strtof(ret.addr, NULL);
+			break;
+		}
+	}
+}
+
+void
+config_init(void)
+{
+	char *resm;
+	XrmDatabase db;
+	ResourcePref *p;
+
+	XrmInitialize();
+	resm = XResourceManagerString(dpy);
+	if (!resm)
+		return;
+
+	db = XrmGetStringDatabase(resm);
+	for (p = resources; p < resources + LENGTH(resources); p++)
+		resource_load(db, p->name, p->type, p->dst);
+}
+
 static void
 setup(void)
 {
@@ -623,7 +687,7 @@ setup(void)
 	XIM xim;
 	Window w, dw, *dws;
 	XWindowAttributes wa;
-	XClassHint ch = {"dmenu", "dmenu"};
+	XClassHint ch = {xprop_name, xprop_class};
 #ifdef XINERAMA
 	XineramaScreenInfo *info;
 	Window pw;
@@ -772,6 +836,7 @@ main(int argc, char *argv[])
 		fputs("warning: no locale support\n", stderr);
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("cannot open display");
+	config_init();
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
 	if (!embed || !(parentwin = strtol(embed, NULL, 0)))
