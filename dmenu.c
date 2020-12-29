@@ -161,7 +161,8 @@ drawmenu(void)
 	drw_rect(drw, 0, 0, mw, mh, 1, 1);
 
 	if (prompt && *prompt) {
-		drw_setscheme(drw, scheme[SchemeSel]);
+		if (!centered)
+			drw_setscheme(drw, scheme[SchemeSel]);
 		x = drw_text(drw, x, 0, promptw, bh, lrpad / 2, prompt, 0);
 	}
 	/* draw input field */
@@ -183,7 +184,7 @@ drawmenu(void)
 	if (lines > 0) {
 		/* draw vertical list */
 		for (item = curr; item != next; item = item->right)
-			drawitem(item, x, y += bh, mw - x);
+			drawitem(item, (centered ? 0 : x), y += bh, mw - (centered ? 0 : x));
 	} else if (matches) {
 		/* draw horizontal list */
 		x += inputw;
@@ -731,9 +732,9 @@ setup(void)
 				if (INTERSECT(x, y, 1, 1, info[i]))
 					break;
 
-		x = info[i].x_org;
-		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
-		mw = info[i].width;
+		mw = (centered ? center_width : 1) * info[i].width;
+		x = info[i].x_org + (centered ? (info[i].width - mw) / 2 : 0);
+		y = info[i].y_org + (centered ? (info[i].height - mh) / 2 : (topbar ? 0 : info[i].height - mh));
 		XFree(info);
 	} else
 #endif
@@ -741,9 +742,9 @@ setup(void)
 		if (!XGetWindowAttributes(dpy, parentwin, &wa))
 			die("could not get embedding window attributes: 0x%lx",
 			    parentwin);
-		x = 0;
-		y = topbar ? 0 : wa.height - mh;
-		mw = wa.width;
+		mw = (centered ? center_width : 1) * wa.width;
+		x = centered ? (wa.width  - mw) / 2 : 0;
+		y = centered ? (wa.height - mh) / 2 : (topbar ? 0 : wa.height - mh);
 	}
 	promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
 	inputw = MIN(inputw, mw/3);

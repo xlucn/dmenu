@@ -2,6 +2,8 @@
 /* Default settings; can be overriden by command line. */
 
 static int topbar = 1;                      /* -b  option; if 0, dmenu appears at bottom     */
+static int centered = 0;                    /* centers dmenu on screen */
+static float center_width = 0.5;              /* center width of dmenu */
 /* -fn option overrides fonts[0]; default X11 font or font set */
 static const char *fonts[] = {
 	"monospace:size=10"
@@ -35,8 +37,10 @@ ResourcePref resources[] = {
 	{ "color4",       STRING,  &outbg },
 	{ "background",   STRING,  &outfg },
 	{ "minheight",    INTEGER, &minheight },
+	{ "centered",     INTEGER, &centered },
 	{ "topbar",       INTEGER, &topbar },
 	{ "lines",        INTEGER, &lines },
+	{ "width",        FLOAT,   &center_width },
 };
 
 /*
