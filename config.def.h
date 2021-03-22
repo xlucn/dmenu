@@ -6,7 +6,9 @@ static int centered = 0;                    /* centers dmenu on screen */
 static float center_width = 0.5;              /* center width of dmenu */
 /* -fn option overrides fonts[0]; default X11 font or font set */
 static const char *fonts[] = {
-	"monospace:size=10"
+	"monospace:size=11",
+	"Noto Sans CJK SC:size=11",
+	"Material Design Icons:size=14"
 };
 static const char *prompt      = NULL;      /* -p  option; prompt to the left of input field */
 static char normfg[] = "#bbbbbb";
